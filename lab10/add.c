@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 struct X {
   int val;
   struct X *next;
