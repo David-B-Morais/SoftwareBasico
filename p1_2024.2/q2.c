@@ -1,10 +1,11 @@
 #include <stdio.h>
 
 unsigned char configuraBits(unsigned char byteConf, int bitInicial, int bitFinal){
+    unsigned char mascara = 0;
     for (int i = bitInicial; i <= bitFinal; i++){
-        byteConf = byteConf | (1 << i);
+        mascara = mascara | (1 << i);
     }
-    return byteConf;
+    return mascara | byteConf;
 }
 
 int main(void){
