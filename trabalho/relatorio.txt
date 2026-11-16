@@ -1,0 +1,160 @@
+INF1018 - Software Basico (2026.2)
+Trabalho: Gerador de Codigo com Funcoes (linguagem LBS)
+
+Integrantes do grupo:
+  Nome_do_Aluno1 Matricula Turma
+  Nome_do_Aluno2 Matricula Turma
+
+
+1. O QUE ESTA FUNCIONANDO
+
+Todos os comandos da linguagem LBS foram implementados e testados:
+
+  - function / end, com prologo e epilogo (registro de ativacao de 32 bytes;
+    variaveis locais v0..v4 e copia do parametro p0 alocadas na pilha);
+  - ret varpc (constante, parametro ou variavel local);
+  - atribuicao com operacao aritmetica (+, - e *), com todas as combinacoes
+    de operandos (variavel, parametro, constante positiva e negativa);
+  - zret varpc varpc (retorno condicional);
+  - call num varpc, incluindo chamada recursiva e chamada a funcoes
+    anteriores do arquivo;
+  - arquivos com varias funcoes: o endereco devolvido em entry e' o da
+    ultima funcao do arquivo.
+
+Compilacao usada nos testes (sem nenhum warning do compilador):
+
+  gcc -Wall -Wa,--execstack -o testa testa.c gera_codigo.c
+
+Os 29 casos de teste executados produziram o resultado esperado. Os bytes
+gerados foram conferidos com "objdump -D -b binary -m i386:x86-64" e, para o
+exemplo da soma dos quadrados, comparados byte a byte com a saida do
+montador (gcc -c) para a mesma traducao escrita em assembly: os 97 bytes
+sao identicos. O valgrind nao apontou erros nem vazamentos (gera_codigo nao
+faz alocacao dinamica).
+
+
+2. O QUE NAO ESTA FUNCIONANDO / LIMITACOES
+
+Nao encontramos casos de erro nos testes realizados. Observacoes:
+
+  - Nao ha tratamento de erros de sintaxe: supoe-se, como diz o enunciado,
+    que o arquivo de entrada esta correto.
+  - gera_codigo nao sabe o tamanho do vetor code. Cada comando LBS gera de
+    5 a 17 bytes e cada funcao tem 11 bytes de prologo; o maior teste usado
+    (3 funcoes, 17 linhas) ocupou 152 bytes. Um arquivo de 50 linhas formado
+    quase so' por comandos com constantes grandes pode passar de 500 bytes.
+  - Se uma funcao nao termina com ret (a gramatica permite), e' gerado um
+    epilogo no "end" e o valor retornado nesse caso e' indefinido.
+
+
+3. EXEMPLOS DE TESTES (todos traduzidos e executados com sucesso)
+
+--- retorno de constante ---        f(5) = 100
+function
+ret $100
+end
+
+--- constante negativa ---          f(0) = -10
+function
+ret $-10
+end
+
+--- retorno do parametro ---        f(42) = 42      f(-7) = -7
+function
+ret p0
+end
+
+--- f(x) = x + 1 ---                f(41) = 42      f(-1) = 0
+function                            f(2147483647) = -2147483648 (overflow)
+v0 = p0 + $1
+ret v0
+end
+
+--- mistura de operandos ---        f(4) = 89       f(-3) = 68
+function
+v0 = p0 * p0
+v1 = v0 - p0
+v2 = v1 + v0
+v3 = $3 * v2
+v4 = v3 - $-5
+ret v4
+end
+
+--- constantes de 32 bits ---       f(1) = 1029000
+function
+v0 = $1000 - p0
+v1 = v0 * $1000
+v2 = v1 + $100000
+v3 = v2 - $70000
+ret v3
+end
+
+--- limites de 8 bits ---           f(2) = -386
+function
+v0 = p0 * $-128
+v1 = v0 + $127
+v2 = v1 - $128
+v3 = v2 + $-129
+ret v3
+end
+
+--- zret ---                        f(0) = 77       f(3) = 4       f(-1) = 0
+function
+zret p0 $77
+v0 = p0 + $1
+ret v0
+end
+
+--- zret com variaveis ---          f(5) = 10       f(6) = -300
+function
+v0 = p0 - $5
+v1 = p0 * $2
+zret v0 v1
+zret $0 $-300
+ret $1
+end
+
+--- fatorial (recursao) ---         f(0) = 1   f(1) = 1   f(5) = 120
+function                            f(12) = 479001600
+zret p0 $1
+v0 = p0 + $0
+v1 = v0 - $1
+v1 = call 0 v1
+v0 = v0 * v1
+ret v0
+end
+
+--- soma dos quadrados ---          f(0) = 0   f(3) = 14   f(10) = 385
+function                            f(1000) = 333833500
+v0 = p0 * p0
+ret v0
+end
+function
+zret p0 $0
+v0 = p0 - $1
+v1 = call 0 p0
+v0 = call 1 v0
+v0 = v0 + v1
+ret v0
+end
+
+--- tres funcoes ---                f(7) = 121
+function
+v0 = p0 + $1
+ret v0
+end
+function
+v0 = call 0 p0
+v0 = call 0 v0
+ret v0
+end
+function
+v3 = p0 * $10
+v4 = call 1 $40
+v2 = call 0 $-1
+v1 = call 1 p0
+v0 = v3 + v4
+v0 = v0 + v1
+v0 = v0 + v2
+ret v0
+end
