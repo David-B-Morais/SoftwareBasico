@@ -4,40 +4,41 @@
 boo:
     pushq %rbp
     movq %rsp, %rbp
-    subq $64, %rsp
+    subq $80, %rsp
 
-    movsd %xmm0, -8(%rbp) /* d */
-    movss %xmm1, -12(%rbp) /* bias */
-    
-    movl $0, -16(%rbp) /* i */
+    movq %rbx, -8(%rbp)
+    movq %r12, -16(%rbp)
+
+    leaq -56(%rbp), %r12
+
+    movsd %xmm0, -64(%rbp)
+    movss %xmm1, -72(%rbp) 
+
+    movl $0, %ebx
 
 for:
-    cmpl $5, -16(%rbp)
+    cmpl $5, %ebx
     jge saifora
 
-    movsd -8(%rbp), %xmm0
+    movsd -64(%rbp), %xmm0
     call inv
 
-    cvtsd2ss %xmm0, %xmm0
-
-    movq %rbp, %rax
-    subq $56, %rax /* rax = endereço de temp[0] */
-
-    movslq -16(%rbp), %rcx
+    movslq %ebx, %rcx
     imulq $8, %rcx
+    addq %r12, %rcx
 
-    addq %rcx, %rax
+    cvtsd2ss %xmm0, %xmm0
+    movss %xmm0, (%rcx)
+    movl %ebx, 4(%rcx)
 
-    movss %xmm0, (%rax) /* temp[i].val = inv(d) */
-    movl -16(%rbp), %ecx
-    movl %ecx, 4(%rax)
-
-    incl -16(%rbp)
+    incl %ebx
     jmp for
 
 saifora:
-    movss -56(%rbp), %xmm0
-    addss -12(%rbp), %xmm0
-
+    movss (%r12), %xmm0
+    movss -72(%rbp), %xmm1
+    addss %xmm1, %xmm0
+    movq -8(%rbp), %rbx
+    movq -16(%rbp), %r12
     leave
     ret

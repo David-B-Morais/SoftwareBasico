@@ -2,15 +2,15 @@
 .globl foo
 
 foo:
-    movl %esi, %ecx
-    xorpd %xmm1, %xmm1
 
 while:
-    cmpl $0, %ecx
-    decl %ecx
+    cmpl $0, %esi
     je saifora
 
-    movsd %xmm1, (%rdi)
+    decl %esi
+
+    xorpd %xmm0, %xmm0
+    movsd %xmm0, (%rdi)
     addq $8, %rdi
 
     jmp while

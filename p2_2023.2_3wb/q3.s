@@ -23,7 +23,7 @@ while:
     imulq $16, %rcx
     leaq -104(%rbp), %rdx /* &reg[0] */
     addq %rcx, %rdx
-    movb %r12d, (%rdx)
+    movb %r12b, (%rdx)
 
     movss -20(%rbp), %xmm0
     call corta
@@ -40,6 +40,6 @@ while:
 saifora:
     movsd -96(%rbp), %xmm0 /* return reg[0].d  (-104 + 8) */
     movq -8(%rbp), %rbx
-    movl -16(%rbp), %r12
+    movq -16(%rbp), %r12
     leave
     ret
